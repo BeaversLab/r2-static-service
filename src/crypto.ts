@@ -56,7 +56,7 @@ const convertBase = (value: string, fromAlphabet: string, toAlphabet: string) =>
 const compressObjectKey = (path: string) => {
   const extension = getObjectKeyExtension(path)
   const stem = getObjectKeyStem(path)
-  if (!extension || !stem) {
+  if (!stem) {
     throw new Error('Invalid object key')
   }
   return {
@@ -67,7 +67,7 @@ const compressObjectKey = (path: string) => {
 
 const expandObjectKey = (compactStem: string, extension: string) => {
   const stem = convertBase(compactStem, BASE62_ALPHABET, BASE17_ALPHABET)
-  return `${stem}.${extension}`
+  return extension ? `${stem}.${extension}` : stem
 }
 
 export const buildTokenPayload = (path: string) => {
@@ -85,7 +85,7 @@ export const decryptToken = (token: string, secret: string) => {
   try {
     const decrypted = xorBytes(fromBase64Url(token), textEncoder.encode(secret))
     const [version, compactStem, extension] = textDecoder.decode(decrypted).split('|')
-    if (version !== TOKEN_VERSION || !compactStem || !extension) {
+    if (version !== TOKEN_VERSION || !compactStem || extension === undefined) {
       throw new Error('Invalid token payload')
     }
     const path = expandObjectKey(compactStem, extension)

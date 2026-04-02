@@ -26,7 +26,7 @@ export const storeUploadedFile = async (
     await env.BUCKET.put(key, bytes, {
       httpMetadata: { contentType: file.type || 'application/octet-stream' },
       customMetadata: {
-        originalName: file.name || `${toHashPrefix(hash)}.${extension}`,
+        originalName: file.name || `${toHashPrefix(hash)}${extension ? `.${extension}` : ''}`,
         uploadedAt: new Date().toISOString(),
         extension
       }
@@ -40,7 +40,7 @@ export const storeUploadedFile = async (
     const formData = new FormData()
     formData.set('token', uploadToken)
     formData.set('key', key)
-    formData.set('file', new File([bytes], file.name || `${toHashPrefix(hash)}.${extension}`, {
+    formData.set('file', new File([bytes], file.name || `${toHashPrefix(hash)}${extension ? `.${extension}` : ''}`, {
       type: file.type || 'application/octet-stream'
     }))
 
@@ -50,7 +50,8 @@ export const storeUploadedFile = async (
     })
 
     if (!uploadResponse.ok) {
-      throw new Error(`Qiniu upload failed: ${uploadResponse.status}`)
+      const responseText = await uploadResponse.text()
+      throw new Error(`Qiniu upload failed: ${uploadResponse.status} ${responseText}`)
     }
   }
 

@@ -9,8 +9,9 @@ const extensionFromFilename = (filename: string) => {
 }
 
 export const getFileExtension = (filename: string, contentType: string) => {
+  const filenameExtension = normalizeExtension(extensionFromFilename(filename))
   const mimeExtension = normalizeExtension(getExtension(contentType))
-  return mimeExtension || normalizeExtension(extensionFromFilename(filename)) || 'bin'
+  return filenameExtension || (mimeExtension === 'bin' ? '' : mimeExtension)
 }
 
 export const getObjectKeyExtension = (path: string) => {
@@ -26,7 +27,8 @@ export const buildObjectKey = (date: Date, hashHex: string, extension: string) =
   const year = date.getUTCFullYear()
   const month = String(date.getUTCMonth() + 1).padStart(2, '0')
   const day = String(date.getUTCDate()).padStart(2, '0')
-  return `${year}/${month}/${day}/${toHashPrefix(hashHex)}.${extension}`
+  const suffix = extension ? `.${extension}` : ''
+  return `${year}/${month}/${day}/${toHashPrefix(hashHex)}${suffix}`
 }
 
 export const buildSeoFilename = (filename: string, hashPrefix: string, extension: string) => {
@@ -39,5 +41,6 @@ export const buildSeoFilename = (filename: string, hashPrefix: string, extension
     .replace(/^-+|-+$/g, '')
     .toLowerCase()
 
-  return `${slug || hashPrefix}.${extension}`
+  const suffix = extension ? `.${extension}` : ''
+  return `${slug || hashPrefix}${suffix}`
 }

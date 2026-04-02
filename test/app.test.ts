@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import app from '../src/app.ts'
 import { buildTokenPayload, decryptToken, encryptToken } from '../src/crypto.ts'
-import { buildObjectKey } from '../src/path.ts'
+import { buildObjectKey, getFileExtension } from '../src/path.ts'
 import { isAuthorizedUpload } from '../src/auth.ts'
 import { resolveRefererCategory } from '../src/referer.ts'
 import { isSupportedImageExtension } from '../src/image.ts'
@@ -385,7 +385,12 @@ test('helper utilities keep planned behavior stable', async () => {
   assert.equal(resolveRefererCategory('https://blocked.example.com/path', ['allowed.example.com']), 'other')
   assert.equal(isSupportedImageExtension('png'), true)
   assert.equal(isSupportedImageExtension('pdf'), false)
+  assert.equal(getFileExtension('test03.js', 'application/octet-stream'), 'js')
+  assert.equal(getFileExtension('LICENSE', 'application/octet-stream'), '')
   assert.match(buildObjectKey(new Date('2026-04-01T00:00:00Z'), 'abcdef1234567890', 'png'), /^2026\/04\/01\/abcdef123456\.png$/)
+  assert.equal(buildObjectKey(new Date('2026-04-01T00:00:00Z'), 'abcdef1234567890', ''), '2026/04/01/abcdef123456')
+  assert.equal(buildTokenPayload('2026/04/01/abcdef123456'), 'v1|DEM28dVXhmsSDXUD|')
+  assert.equal(decryptToken(encryptToken('2026/04/01/abcdef123456', 'token-secret'), 'token-secret').path, '2026/04/01/abcdef123456')
 })
 
 test('prints compressed token plaintext and ciphertext sample', () => {

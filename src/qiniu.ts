@@ -6,7 +6,6 @@ const toUrlSafeBase64 = (value: string) =>
   btoa(value)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$/g, '')
 
 const signHmacSha1 = async (value: string, secretKey: string) => {
   const key = await crypto.subtle.importKey(
@@ -17,19 +16,18 @@ const signHmacSha1 = async (value: string, secretKey: string) => {
     ['sign']
   )
   const signature = await crypto.subtle.sign('HMAC', key, textEncoder.encode(value))
-  return Uint8Array.from(signature)
+  return new Uint8Array(signature)
 }
 
 const toUrlSafeBase64Bytes = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$/g, '')
 
 export const createQiniuUploadToken = async (
   storage: QiniuStorageConfig,
   secrets: QiniuStorageSecrets,
-  key: string
+  key: string,
 ) => {
   const putPolicy = JSON.stringify({
     scope: `${storage.bucket}:${key}`,
