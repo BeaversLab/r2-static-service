@@ -2,7 +2,13 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "r2-static-service",
   "workers_dev": true,
-  "compatibility_date": "2026-08-09",
+  "compatibility_date": "2026-04-01",
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
   "r2_buckets": [
     {
       "binding": "BUCKET",
@@ -10,37 +16,51 @@
       "preview_bucket_name": "static"
     }
   ],
-  "images": {
-    "binding": "IMAGES",
-  },
   "vars": {
+    "CURRENT_STORAGE": "r2-static",
+    "STORAGE_CONFIGS_JSON": {
+      "r2-static": {
+        "type": "r2",
+        "publicBaseUrl": "https://origin.example.com",
+        "proxyBaseUrl": "https://proxy.example.com"
+      },
+      "qiniu-static": {
+        "type": "qiniu",
+        "bucket": "static",
+        "publicBaseUrl": "https://cdn.example.com",
+        "proxyBaseUrl": "https://proxy-qiniu.example.com",
+        "uploadUrl": "https://upload.qiniup.com"
+      }
+    },
+    "IMAGE_PROXY_WATERMARK_SCHEMES_JSON": {
+      "light": {
+        "text": "Protected",
+        "font": "Source Han Sans HC VF",
+        "color": "FFFFFF",
+        "colorOpacity": 1,
+        "fill": "FFFFFF",
+        "fillOpacity": 0,
+        "width": 0.477,
+        "height": 0.0904,
+        "offsetX": 0.472,
+        "offsetY": 0.843
+      },
+      "strong": {
+        "text": "Protected",
+        "font": "Source Han Sans HC VF",
+        "color": "5483F6",
+        "colorOpacity": 1,
+        "fill": "FFFFFF",
+        "fillOpacity": 0,
+        "width": 0.477,
+        "height": 0.0904,
+        "offsetX": 0.26,
+        "offsetY": 0.454
+      }
+    },
     "REFERER_ALLOWLIST": ["example.com", "*.example.com"],
     "REFERER_POLICY_ALLOWLIST": "watermark:light",
     "REFERER_POLICY_NO_REFERER": "watermark:light",
-    "REFERER_POLICY_OTHER": "watermark:strong",
-    "WATERMARK_SCHEMES_JSON": {
-      "light": {
-        "type": "text",
-        "text": "Protected",
-        "opacity": 0.18,
-        "bottom": 24,
-        "right": 24,
-        "fontSize": 24,
-        "color": "rgba(255,255,255,0.85)",
-        "width": 320,
-        "height": 72
-      },
-      "strong": {
-        "type": "text",
-        "text": "Protected",
-        "opacity": 0.28,
-        "bottom": 20,
-        "right": 20,
-        "fontSize": 30,
-        "color": "rgba(255,80,80,0.9)",
-        "width": 360,
-        "height": 88
-      }
-    }
+    "REFERER_POLICY_OTHER": "watermark:strong"
   }
 }

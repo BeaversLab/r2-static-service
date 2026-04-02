@@ -1,72 +1,108 @@
 import * as z from 'zod'
-import type { AppConfig, PolicyAction, RefererCategory, WatermarkScheme } from './types.ts'
+import type {
+  AppConfig,
+  ImageProxyWatermarkScheme,
+  PolicyAction,
+  RefererCategory,
+  StorageConfig,
+  StorageSecrets
+} from './types.ts'
 
 const envSchema = z.object({
   UPLOAD_BEARER_TOKEN: z.string().min(1),
   TOKEN_SECRET: z.string().min(1),
-  REFERER_ALLOWLIST: z.union([z.string(), z.array(z.string())]).optional(),
-  REFERER_POLICY_ALLOWLIST: z.string().default('watermark:light'),
-  REFERER_POLICY_NO_REFERER: z.string().default('watermark:light'),
-  REFERER_POLICY_OTHER: z.string().default('watermark:strong'),
-  WATERMARK_SCHEMES_JSON: z
+  CURRENT_STORAGE: z.string().default('r2'),
+  STORAGE_CONFIGS_JSON: z
+    .union([
+      z.string(),
+      z.record(z.string(), z.unknown())
+    ])
+    .default({
+      r2: {
+        type: 'r2',
+        publicBaseUrl: 'https://origin.example.com',
+        proxyBaseUrl: 'https://proxy.example.com'
+      }
+    }),
+  STORAGE_SECRETS_JSON: z
+    .union([
+      z.string(),
+      z.record(z.string(), z.unknown())
+    ])
+    .default({}),
+  IMAGE_PROXY_WATERMARK_SCHEMES_JSON: z
     .union([
       z.string(),
       z.record(z.string(), z.unknown())
     ])
     .default({
       light: {
-        type: 'text',
         text: 'Protected',
-        opacity: 0.18,
-        bottom: 24,
-        right: 24,
-        fontSize: 24,
-        color: 'rgba(255,255,255,0.85)',
-        width: 320,
-        height: 72
+        font: 'Source Han Sans HC VF',
+        color: 'FFFFFF',
+        colorOpacity: 1,
+        fill: 'FFFFFF',
+        fillOpacity: 0,
+        width: 0.28,
+        height: 0.0904,
+        offsetX: 0.04,
+        offsetY: 0.04
       },
       strong: {
-        type: 'text',
         text: 'Protected',
-        opacity: 0.28,
-        bottom: 20,
-        right: 20,
-        fontSize: 30,
-        color: 'rgba(255,80,80,0.9)',
-        width: 360,
-        height: 88
+        font: 'Source Han Sans HC VF',
+        color: 'FF5050',
+        colorOpacity: 1,
+        fill: 'FFFFFF',
+        fillOpacity: 0,
+        width: 0.36,
+        height: 0.0904,
+        offsetX: 0.04,
+        offsetY: 0.04
       }
-    })
+    }),
+  REFERER_ALLOWLIST: z.union([z.string(), z.array(z.string())]).optional(),
+  REFERER_POLICY_ALLOWLIST: z.string().default('watermark:light'),
+  REFERER_POLICY_NO_REFERER: z.string().default('watermark:light'),
+  REFERER_POLICY_OTHER: z.string().default('watermark:strong')
 })
 
-const textSchemeSchema = z.object({
-  type: z.literal('text'),
+const imageProxyWatermarkSchemeSchema = z.object({
   text: z.string().min(1),
+  font: z.string().optional(),
   color: z.string().optional(),
-  fontSize: z.number().int().positive().optional(),
-  fontFamily: z.string().optional(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  opacity: z.number().min(0).max(1).optional(),
-  top: z.number().int().nonnegative().optional(),
-  right: z.number().int().nonnegative().optional(),
-  bottom: z.number().int().nonnegative().optional(),
-  left: z.number().int().nonnegative().optional(),
-  repeat: z.boolean().optional()
+  colorOpacity: z.number().min(0).max(1).optional(),
+  fill: z.string().optional(),
+  fillOpacity: z.number().min(0).max(1).optional(),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  offsetX: z.number().min(0).max(1).optional(),
+  offsetY: z.number().min(0).max(1).optional()
 })
 
-const imageSchemeSchema = z.object({
-  type: z.literal('image'),
-  source: z.string().min(1),
-  opacity: z.number().min(0).max(1).optional(),
-  top: z.number().int().nonnegative().optional(),
-  right: z.number().int().nonnegative().optional(),
-  bottom: z.number().int().nonnegative().optional(),
-  left: z.number().int().nonnegative().optional(),
-  repeat: z.boolean().optional()
+const imageProxyWatermarkSchemesSchema = z.record(z.string(), imageProxyWatermarkSchemeSchema)
+
+const r2StorageSchema = z.object({
+  type: z.literal('r2'),
+  publicBaseUrl: z.string().url(),
+  proxyBaseUrl: z.string().url()
 })
 
-const watermarkSchemesSchema = z.record(z.string(), z.union([textSchemeSchema, imageSchemeSchema]))
+const qiniuStorageSchema = z.object({
+  type: z.literal('qiniu'),
+  bucket: z.string().min(1),
+  publicBaseUrl: z.string().url(),
+  proxyBaseUrl: z.string().url(),
+  uploadUrl: z.string().url().optional()
+})
+
+const storageConfigsSchema = z.record(z.string(), z.union([r2StorageSchema, qiniuStorageSchema]))
+const storageSecretsSchema = z.record(z.string(), z.object({
+  qiniu: z.object({
+    accessKey: z.string().min(1),
+    secretKey: z.string().min(1)
+  }).optional()
+}))
 
 const parsePolicyAction = (value: string): PolicyAction => {
   const normalized = value.trim().toLowerCase()
@@ -92,15 +128,34 @@ const normalizeAllowlist = (value?: string | string[]) => {
   return items.map((entry) => entry.trim().toLowerCase()).filter(Boolean)
 }
 
-const parseWatermarkSchemes = (value: string | Record<string, unknown>) =>
-  watermarkSchemesSchema.parse(typeof value === 'string' ? JSON.parse(value) : value) as Record<
+const parseImageProxyWatermarkSchemes = (value: string | Record<string, unknown>) =>
+  imageProxyWatermarkSchemesSchema.parse(typeof value === 'string' ? JSON.parse(value) : value) as Record<
     string,
-    WatermarkScheme
+    ImageProxyWatermarkScheme
+  >
+
+const parseStorageConfigs = (value: string | Record<string, unknown>) =>
+  storageConfigsSchema.parse(typeof value === 'string' ? JSON.parse(value) : value) as Record<
+    string,
+    StorageConfig
+  >
+
+const parseStorageSecrets = (value: string | Record<string, unknown>) =>
+  storageSecretsSchema.parse(typeof value === 'string' ? JSON.parse(value) : value) as Record<
+    string,
+    StorageSecrets
   >
 
 export const getConfig = (env: Cloudflare.Env): AppConfig => {
   const parsed = envSchema.parse(env)
-  const watermarkSchemes = parseWatermarkSchemes(parsed.WATERMARK_SCHEMES_JSON)
+  const storages = parseStorageConfigs(parsed.STORAGE_CONFIGS_JSON)
+  const storageSecrets = parseStorageSecrets(parsed.STORAGE_SECRETS_JSON)
+  const imageProxyWatermarkSchemes = parseImageProxyWatermarkSchemes(parsed.IMAGE_PROXY_WATERMARK_SCHEMES_JSON)
+  const currentStorage = parsed.CURRENT_STORAGE.trim()
+
+  if (!storages[currentStorage]) {
+    throw new Error(`Missing storage config: ${currentStorage}`)
+  }
 
   const refererPolicies = {
     allowlist: parsePolicyAction(parsed.REFERER_POLICY_ALLOWLIST),
@@ -109,7 +164,10 @@ export const getConfig = (env: Cloudflare.Env): AppConfig => {
   } satisfies Record<RefererCategory, PolicyAction>
 
   for (const policy of Object.values(refererPolicies)) {
-    if (policy.type === 'watermark' && !watermarkSchemes[policy.scheme]) {
+    if (
+      policy.type === 'watermark' &&
+      !imageProxyWatermarkSchemes[policy.scheme]
+    ) {
       throw new Error(`Missing watermark scheme: ${policy.scheme}`)
     }
   }
@@ -119,6 +177,9 @@ export const getConfig = (env: Cloudflare.Env): AppConfig => {
     tokenSecret: parsed.TOKEN_SECRET,
     refererAllowlist: normalizeAllowlist(parsed.REFERER_ALLOWLIST),
     refererPolicies,
-    watermarkSchemes
+    imageProxyWatermarkSchemes,
+    currentStorage,
+    storages,
+    storageSecrets
   }
 }

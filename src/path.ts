@@ -13,6 +13,13 @@ export const getFileExtension = (filename: string, contentType: string) => {
   return mimeExtension || normalizeExtension(extensionFromFilename(filename)) || 'bin'
 }
 
+export const getObjectKeyExtension = (path: string) => {
+  const match = path.toLowerCase().match(/\.([a-z0-9]+)$/)
+  return match ? match[1] : ''
+}
+
+export const getObjectKeyStem = (path: string) => path.replace(/\.[^.]+$/, '')
+
 export const toHashPrefix = (hashHex: string) => hashHex.slice(0, HASH_LENGTH)
 
 export const buildObjectKey = (date: Date, hashHex: string, extension: string) => {

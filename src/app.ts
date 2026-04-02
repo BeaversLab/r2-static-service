@@ -3,9 +3,9 @@ import { buildCacheRequest } from './cache.ts'
 import { isAuthorizedUpload } from './auth.ts'
 import { getConfig } from './config.ts'
 import { decryptToken } from './crypto.ts'
-import { buildObjectResponse } from './object-response.ts'
 import { resolvePolicyAction } from './referer.ts'
-import { getFileFromBody, storeUploadedFile } from './upload.ts'
+import { buildStorageObjectResponse } from './storage.ts'
+import { getFileFromBody, getStorageIdFromBody, storeUploadedFile } from './upload.ts'
 
 const app = new Hono<{ Bindings: Cloudflare.Env }>()
 
@@ -25,11 +25,16 @@ app.put('/upload', async (c) => {
     return c.json({ error: 'Missing file field `file`' }, 400)
   }
 
-  const stored = await storeUploadedFile(c.req.url, file, c.env, config.tokenSecret)
+  const storageId = getStorageIdFromBody(body, config.currentStorage)
+  if (!config.storages[storageId]) {
+    return c.json({ error: 'Invalid storage_id' }, 400)
+  }
+
+  const stored = await storeUploadedFile(c.req.url, file, storageId, c.env, config)
   return c.json(stored, 201)
 })
 
-app.get('/:token/:seoFilename', async (c) => {
+app.get('/:storageId/:token/:seoFilename', async (c) => {
   const config = getConfig(c.env)
   const cache = globalThis.caches?.default
   const action = resolvePolicyAction(config, c.req.header('Referer'))
@@ -52,19 +57,18 @@ app.get('/:token/:seoFilename', async (c) => {
     return c.json({ error: 'Invalid token' }, 400)
   }
 
-  const object = await c.env.BUCKET.get(payload.path)
-  if (!object) {
-    return c.notFound()
+  const storage = config.storages[c.req.param('storageId')]
+  if (!storage) {
+    return c.json({ error: 'Invalid storage_id' }, 400)
   }
 
-  const response = await buildObjectResponse(
-    object,
+  const response = await buildStorageObjectResponse(
+    storage,
+    payload.path,
     payload.extension,
     c.req.query(),
-    c.req.header('Accept'),
     action,
-    config,
-    c.env.IMAGES
+    config
   )
 
   if (response.ok && cache) {

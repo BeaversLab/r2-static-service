@@ -1,29 +1,15 @@
-export type WatermarkScheme =
-  | {
-      type: 'text'
-      text: string
-      color?: string
-      fontSize?: number
-      fontFamily?: string
-      width?: number
-      height?: number
-      opacity?: number
-      top?: number
-      right?: number
-      bottom?: number
-      left?: number
-      repeat?: boolean
-    }
-  | {
-      type: 'image'
-      source: string
-      opacity?: number
-      top?: number
-      right?: number
-      bottom?: number
-      left?: number
-      repeat?: boolean
-    }
+export type ImageProxyWatermarkScheme = {
+  text: string
+  font?: string
+  color?: string
+  colorOpacity?: number
+  fill?: string
+  fillOpacity?: number
+  width?: number
+  height?: number
+  offsetX?: number
+  offsetY?: number
+}
 
 export type PolicyAction =
   | { type: 'reject' }
@@ -32,10 +18,38 @@ export type PolicyAction =
 
 export type RefererCategory = 'allowlist' | 'no-referer' | 'other'
 
+export type R2StorageConfig = {
+  type: 'r2'
+  publicBaseUrl: string
+  proxyBaseUrl: string
+}
+
+export type QiniuStorageConfig = {
+  type: 'qiniu'
+  bucket: string
+  publicBaseUrl: string
+  proxyBaseUrl: string
+  uploadUrl?: string
+}
+
+export type StorageConfig = R2StorageConfig | QiniuStorageConfig
+
+export type QiniuStorageSecrets = {
+  accessKey: string
+  secretKey: string
+}
+
+export type StorageSecrets = {
+  qiniu?: QiniuStorageSecrets
+}
+
 export type AppConfig = {
   uploadBearerToken: string
   tokenSecret: string
   refererAllowlist: string[]
   refererPolicies: Record<RefererCategory, PolicyAction>
-  watermarkSchemes: Record<string, WatermarkScheme>
+  imageProxyWatermarkSchemes: Record<string, ImageProxyWatermarkScheme>
+  currentStorage: string
+  storages: Record<string, StorageConfig>
+  storageSecrets: Record<string, StorageSecrets>
 }
