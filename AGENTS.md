@@ -16,7 +16,7 @@ There is no separate bundling step beyond Wrangler deploy.
 
 ## Coding Style & Naming Conventions
 
-Use TypeScript with strict compiler settings and ES module syntax. Follow the existing style in [src/index.ts](/Users/marco/Documents/git/github.com/BeaversLab/r2-static-service/src/index.ts): 2-space indentation, single quotes, semicolon-free statements, and small helper functions. Prefer descriptive camelCase names such as `resolvePolicyAction`; reserve uppercase names for environment bindings like `BUCKET`, `UPLOAD_BEARER_TOKEN`, and `TOKEN_SECRET`.
+Use TypeScript with strict compiler settings and ES module syntax. Follow the existing style in [src/index.ts](/Users/marco/Documents/git/github.com/BeaversLab/oss-static-service/src/index.ts): 2-space indentation, single quotes, semicolon-free statements, and small helper functions. Prefer descriptive camelCase names such as `resolvePolicyAction`; reserve uppercase names for environment bindings like `BUCKET`, `UPLOAD_BEARER_TOKEN`, and `TOKEN_SECRET`.
 
 ## Testing Guidelines
 

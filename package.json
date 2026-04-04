@@ -1,5 +1,5 @@
 {
-  "name": "r2-static-service",
+  "name": "oss-static-service",
   "version": "1.2.0",
   "type": "module",
   "scripts": {

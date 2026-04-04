@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "r2-static-service",
+  "name": "oss-static-service",
   "workers_dev": true,
   "compatibility_date": "2026-04-01",
   "observability": {

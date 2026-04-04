@@ -1,4 +1,4 @@
-# r2-static-service
+# oss-static-service
 
 基于 Cloudflare Workers 的静态文件代理服务，支持：
 

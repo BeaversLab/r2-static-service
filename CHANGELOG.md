@@ -1,4 +1,4 @@
-# r2-static-service
+# oss-static-service
 
 ## 1.2.0
 
