@@ -1,5 +1,11 @@
 # oss-static-service
 
+## 1.2.1
+
+### Patch Changes
+
+- Rename the project from `r2-static-service` to `oss-static-service` across package metadata, docs, and example configuration.
+
 ## 1.2.0
 
 ### Minor Changes
